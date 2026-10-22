@@ -1,4 +1,4 @@
-const FECHA_INICIO = new Date("2024-11-09T20:00:00");
+const FECHA_INICIO = new Date("2026-02-14T00:00:00");
 
 const reducirMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -161,9 +161,12 @@ function iniciarCorazones() {
 function prepararMusica() {
   const audio = $("#musica");
   const boton = $("#botonMusica");
+  const texto = $("#textoMusica");
   const aviso = $("#aviso");
   if (!audio || !boton) return;
 
+  const pistas = ["Audio/Obscuridad GH y su escuadron.mp4", "Audio/Until I Found You.mp4"];
+  let pistaActual = 0;
   let temporizadorAviso = null;
 
   function mostrarAviso(mensaje) {
@@ -176,13 +179,23 @@ function prepararMusica() {
     }, 4500);
   }
 
-  boton.addEventListener("click", async () => {
+  function cargarPista(indice) {
+    pistaActual = (indice + pistas.length) % pistas.length;
+    audio.src = encodeURI(pistas[pistaActual]);
+    audio.load();
+  }
+
+  async function reproducir() {
+    try {
+      await audio.play();
+    } catch (error) {
+      mostrarAviso("Toca de nuevo el botón para escuchar la música.");
+    }
+  }
+
+  boton.addEventListener("click", () => {
     if (audio.paused) {
-      try {
-        await audio.play();
-      } catch (error) {
-        mostrarAviso("Agrega una canción llamada musica.mp3 en esta carpeta para escucharla aquí.");
-      }
+      reproducir();
     } else {
       audio.pause();
     }
@@ -191,17 +204,25 @@ function prepararMusica() {
   audio.addEventListener("play", () => {
     boton.setAttribute("aria-pressed", "true");
     boton.setAttribute("aria-label", "Pausar música");
+    if (texto) texto.textContent = "Pausar música";
   });
 
   audio.addEventListener("pause", () => {
     boton.setAttribute("aria-pressed", "false");
     boton.setAttribute("aria-label", "Reproducir música");
+    if (texto) texto.textContent = "Presiona para escuchar la música";
+  });
+
+  audio.addEventListener("ended", () => {
+    cargarPista(pistaActual + 1);
+    reproducir();
   });
 
   audio.addEventListener("error", () => {
-    if (!audio.paused) return;
-    mostrarAviso("No encontré musica.mp3. Añade tu canción favorita a esta carpeta.");
+    mostrarAviso("No encontré los audios de la carpeta Audio.");
   });
+
+  cargarPista(0);
 }
 
 function prepararModal() {
